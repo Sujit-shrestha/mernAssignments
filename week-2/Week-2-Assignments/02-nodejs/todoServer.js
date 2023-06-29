@@ -41,9 +41,117 @@
  */
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const app = express();
-
+const PORT =3000;
+var todoList = [
+  //DEFAULT TODOS
+  {
+    "id":11, 
+    "title":"Buy groceries(Default TODO )",
+    "completed" : false,
+    "desctription" : "I should buy groceries"
+  },
+  {
+    "id":203 , 
+    "title":"Buy groceries",
+    "completed" : false,
+    "desctription" : "I should buy groceries"
+  }
+];
+//middlewares
 app.use(bodyParser.json());
 
+
+//functins for http servcers handlers
+function retrieveTodos(req,res){
+  res.status(200).json(todoList);
+}
+
+  function getIndex(inputID){
+    var index = -1;
+    for(var i=0;i<todoList.length;i++){
+      if(todoList[i].id == inputID){
+        index=i;
+      }
+    }
+    return index;
+  }
+
+function retrieveTodosById(req,res){
+  var id=req.params.id;
+  var index=-1;
+  index = getIndex(id);
+
+  if(index== -1){
+    res.send("Todo ID not Found");
+  }else{
+    res.send(todoList[index]);
+  }
+
+}
+
+function createTodos(req,res){
+  var id = Math.floor(Math.random()*1000);
+  var title = req.body.title;
+  var description = req.body.description;
+  var tempObj = {
+    "id":id,
+    "title":title,
+    "completed":false,
+    "description":description
+  }
+  todoList.push(tempObj);
+  var sendObj={"id":id}
+  res.status(201).json(sendObj)
+}
+
+function updateTodos(req,res){
+  var id= req.params.id;
+  var title = req.body.title;
+  var description = req.body.description;
+  var index= getIndex(id);
+  if(index== -1){
+    res.status(404).send(`404 not found : id ${id} NOT AVAILABLE in DATABASE `);
+  }else{
+    var tempObj = {
+      "id":id,
+      "title":title,
+      "completed":false,
+      "description":description
+    }
+    todoList.splice(index , 1 , tempObj)
+    res.send("TODO list updated in the given id");
+  }
+  
+}
+
+function deleteTodos(req,res){
+  var id = req.params.id;
+  var index = getIndex(id);
+  if(index == -1 ){
+    res.status(404).send(`Given id ${id} was not found`);
+  }else{
+    todoList.splice(index , 1);
+    res.status(200).send(`Todo item was found and deketed`);
+  }
+  
+  
+}
+//http servers description
+app.get('/todos' , retrieveTodos);
+app.get('/todos/:id', retrieveTodosById);
+app.post('/createTodos', createTodos);
+app.put('/updateTodos/:id' , updateTodos);
+app.delete('/deleteTodos/:id' , deleteTodos);
+
+//default handler/middleware for non defined routes requests
+app.use((req,res)=>{
+  res.status(404).send("404 NOT FOUND as said by middleware");
+})
+
+
+//LISTNER
+app.listen(PORT, ()=>{
+  console.log(`app listeneing in port ${PORT}`);
+})
 module.exports = app;

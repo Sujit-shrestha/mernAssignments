@@ -6,6 +6,7 @@
 
 
 function waitOneSecond() {
+  return new Promise();
 
 }
 

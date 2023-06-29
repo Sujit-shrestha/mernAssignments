@@ -32,6 +32,128 @@
 const express = require("express")
 const PORT = 3000;
 const app = express();
+const bodyParser = require('body-parser')
 // write your logic here, DONT WRITE app.listen(3000) when you're running tests, the tests will automatically start the server
 
-module.exports = app;
+//FUNCTIONS FOR MIDDLEWARES
+// function middleware1(req , res , next){
+//   console.log("from middleware "  + req.headers.count);
+//   next();
+// }
+
+// //middlewares
+// app.use(middleware1);  
+app.use(bodyParser.json());
+var account = [
+  {
+      "id": 1,
+      "username": "admin",
+      "password": 1234
+  }
+]; 
+
+//function of HTTPS handelers
+
+function signupHandler(req , res){
+  
+  //condition for already existing username
+  var count=0;
+  var found = false;
+  account.forEach(obj=>{
+    if(obj.username==req.body.username){
+      
+      found =true;
+    }
+  })
+  if(found){
+    res.status(400).send("Username already exists");
+    return;
+  }
+  //extracting values of body
+  var username = req.body.username;
+  var id = Math.floor(Math.random()*1000);
+  var password = req.body.password;
+  var firstName = req.body.firstName;
+  var lastName = req.body.lastName;
+
+  var obj = {
+    "id":id,
+    "username":username,
+    "password":password,
+    "firstName": firstName,
+    "lastName":lastName
+  }
+  account.push(obj);
+  
+  account.sort((a,b)=>  
+  {return (a.id-b.id)});
+  res.status(201).send( account);
+}
+
+function loginHandler(req ,res){
+  var username = req.body.username;
+  var password = req.body.password;
+
+  var authentication = authenticate(username , password);
+ // console.log(authentication)
+  if(authentication == false){
+    res.status(401).send("Unauthorised")
+    return;
+  }
+
+  authentication = {
+    "token-value": authentication
+  }
+  res.status(200).send(authentication);
+    
+}
+function authenticate(userName , passWord){
+  var foundUser = false;
+  //console.log(account);
+ // console.log("this is waht is sent" + userName+ " " + passWord);
+  account.forEach(obj=>{
+   // console.log(obj.username + " " + userName);
+    if(obj.username==userName ){
+      
+      foundUser = true;
+    }
+  })
+  if(foundUser == true){
+    return "Random authorization token "
+  }else{
+    return foundUser;
+  }
+ 
+}
+function dataHandler(req, res){
+  var  username = req.headers.username;
+  var password = req.headers.password;
+  var userFound = false;
+  for(var i=0 ; i<account.length;i++){
+    if(username == account[i].username && password == account[i].password){
+      userFound = true;
+      break;
+    }
+  }
+  if(userFound){
+    res.status(200).json(account)
+
+  }else{
+    res.status(401).send("Unauthorised")
+  }
+  
+}
+//HTTP SERVERS DESCRIPTION
+app.post('/signup' , signupHandler);
+app.post('/login' , loginHandler);
+app.get('/data' , dataHandler);
+
+
+//express lsitner
+app.listen(PORT, ()=>{
+  console.log(`app listeneing in port ${PORT}`);
+})
+
+
+//no idea what this is 
+//module.exports = app;

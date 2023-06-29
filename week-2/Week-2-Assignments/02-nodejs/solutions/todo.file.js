@@ -28,18 +28,7 @@ app.get('/todos', (req, res) => {
   });
 });
 
-app.get('/todos/:id', (req, res) => {
-  fs.readFile("todos.json", "utf8", (err, data) => {
-    if (err) throw err;
-    const todos = JSON.parse(data);
-    const todoIndex = findIndex(todos, parseInt(req.params.id));
-    if (todoIndex === -1) {
-      res.status(404).send();
-    } else {
-      res.json(todos[todoIndex]);
-    }
-  });
-});
+
 
 app.post('/todos', (req, res) => {
   const newTodo = {
@@ -97,10 +86,14 @@ app.delete('/todos/:id', (req, res) => {
     }
   });
 });
-
+const path = require('path')
+const cors = require('cors');
+app.get('/' , (req,res)=>{
+  res.sendFile(path.join(__dirname , "index.html"));
+})
 // for all other routes, return 404
-app.use((req, res, next) => {
-  res.status(404).send();
-});
+//app.use((req, res, next) => {
+ // res.status(404).send();
+//});
 
-module.exports = app;
+app.listen(3000);
