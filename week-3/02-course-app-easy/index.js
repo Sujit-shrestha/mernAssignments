@@ -16,7 +16,7 @@ let ADMINS = [
 let USERS = [];
 let COURSES = [
   { "courseId":1,
-    "title": "course title ", 
+    "title": "demo title ", 
     "description": "course description", 
     "price": 100,
     "imageLink": "https://linktoimage.com", 
