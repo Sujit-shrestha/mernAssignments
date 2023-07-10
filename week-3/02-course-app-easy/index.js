@@ -13,7 +13,13 @@ let ADMINS = [
     "password" :"pass"
   }
 ];
-let USERS = [];
+let USERS = [
+  {
+    "username":"user1",
+    "password":"pass",
+    "purchasedCoursesId":[1]
+  }
+];
 let COURSES = [
   { "courseId":1,
     "title": "demo title ", 
@@ -22,7 +28,15 @@ let COURSES = [
     "imageLink": "https://linktoimage.com", 
     "published": true
     
-    }
+    },
+  { "courseId":2,
+    "title": "demo title ", 
+    "description": "course description", 
+    "price": 100,
+    "imageLink": "https://linktoimage.com", 
+    "published": true
+  
+  }
 ];
 
 //FUNCTION for http handlers
@@ -176,23 +190,109 @@ app.get('/admin/courses', (req, res) => {
 
 // User routes
 app.post('/users/signup', (req, res) => {
+  
   // logic to sign up user
+  var username = req.body.username;
+  var password = req.body.password;
+  var newUserObject = {
+    username: username,
+    password:password
+  }
+  let userIndex = userIndexFinder(USERS , username);
+  if(userIndex== -1){
+   
+    USERS.push(newUserObject);
+    res.status(200).send({message:"User created successfully","USERS":USERS})
+  }else{
+    res.status(403).send({message:"User already exists"})
+  }
+  
 });
 
 app.post('/users/login', (req, res) => {
   // logic to log in user
+  var username = req.headers.username;
+  var password = req.headers.password;
+  var flag = Authenticate(USERS , username , password);
+  if(flag ){
+    res.status(200).send({message:"Logged in successfully"})
+  }else{
+    res.status(401).send({message:"Unauthorised"})
+  }
+
 });
 
 app.get('/users/courses', (req, res) => {
   // logic to list all courses
+  var username = req.headers.username;
+  var password = req.headers.password;
+  var flag = Authenticate(USERS , username , password);
+  if(flag){
+    res.status(200).send({"courses":COURSES});
+  }else{
+    res.status(401).send({message:"Unauthorised"})
+  }
+
 });
 
 app.post('/users/courses/:courseId', (req, res) => {
   // logic to purchase a course
+  var username = req.headers.username;
+  var password = req.headers.password;
+  //to authenticate user
+  var flag = Authenticate(USERS , username , password);
+  if(flag){
+    var courseId = req.params.courseId;
+    var courseIndex = courseIndexFinder(COURSES , courseId);
+    if(courseIndex == -1){
+      res.status(403).send({message:"Course not found"})
+    }else{
+      //pushing purchased course into users object
+      var userIndex = userIndexFinder(USERS,username);
+      USERS[userIndex].purchasedCoursesId.push(courseId);
+      
+      var message = {
+        message:"Course Purchased successfully",
+        course  :COURSES[courseIndex]
+      }
+      res.status(200).send(message);
+    }
+
+  }else{
+    res.status(401).send({message:"Unauthorised"})
+
+  }
+
 });
 
 app.get('/users/purchasedCourses', (req, res) => {
   // logic to view purchased courses
+  var username = req.headers.username;
+  var password = req.headers.password;
+  
+  var flag = Authenticate(USERS , username , password);
+
+  if(flag){
+    //getting user index
+    var userIndex = userIndexFinder(USERS,username);
+    var coursesPurchased = [];
+    var courseIndexValues = [];
+    //copying values of user purchased courses data into courseIndexValues
+    (USERS[userIndex].purchasedCoursesId).forEach(values =>{
+      courseIndexValues.push(values);
+    })
+    
+    courseIndexValues.forEach(values=>{
+      coursesPurchased.push(COURSES[values-1])
+    })
+    
+    res.status(200).send({
+      "purchasedCourses":coursesPurchased
+    })
+  }else{
+    res.status(401).send({message:"Unauthorised"})
+  }
+
 });
 
 app.listen(3000, () => {
