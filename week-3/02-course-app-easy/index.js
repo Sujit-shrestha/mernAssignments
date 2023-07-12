@@ -101,9 +101,7 @@ app.post('/admin/signup', (req, res) => {
 });
 
 app.post('/admin/login', (req, res) => {
-  //console.log("request arriving");
-  var username = req.headers.username;
-  var password = req.headers.password;
+  const{username , password} = req.headers;
   var userIndex = userIndexFinder(ADMINS ,username);
 
   if(userIndex > -1){
@@ -123,31 +121,33 @@ app.post('/admin/login', (req, res) => {
 
 app.post('/admin/courses', (req, res) => {
   // logic to create a course
-  var password = req.headers.password;
-  var username = req.headers.username;
-  var title = req.body.title;
-  var description = req.body.description;
-  var price = req.body.price;
-  var imageLink = req.body.imageLink;
-  var poublished = req.body.poublished;
-  var courseId = Math.floor(Math.random()*1000);
-  var courseObj = {
-    "courseId":courseId,
-    "title" :title,
-    "description" :description,
-    "price":price,
-    "imageLink":imageLink,
-    "published":true
-  }
+  const{username , password} = req.headers;
+ // const{title , description , price , imageLink , published} = req.body;
+  // var title = req.body.title;
+  // var description = req.body.description;
+  // var price = req.body.price;
+  // var imageLink = req.body.imageLink;
+  // var published = req.body.published;
+   var courseId = Math.floor(Math.random()*1000);
+  // var courseObj = {
+  //   "courseId":courseId,
+  //   "title" :title,
+  //   "description" :description,
+  //   "price":price,
+  //   "imageLink":imageLink,
+  //   "published":published
+  // }
+  const course = req.body;
+  course.courseId = courseId;
+  COURSES.push(course)
   var outputObj = {"message":"Course created successfully" , "courseId"  :courseId};
   res.status(200).send(outputObj)
 });
 
 app.put('/admin/courses/:courseId', (req, res) => {
   // logic to edit a course
-  var username = req.headers.username;
-  var password = req.headers.password;
-  var courseId = req.params.courseId;
+  const{username , password} = req.headers;
+  var courseId = Number(req.params.courseId);
   var auth = Authenticate(ADMINS , username , password);
   console.log(auth);
   if(auth == false){
@@ -179,7 +179,7 @@ app.get('/admin/courses', (req, res) => {
   var username = req.headers.username;
   var password = req.headers.password;
   var auth = Authenticate(ADMINS , username , password);
-  console.log("here");
+  //console.log("here");
   if(auth == false){
     res.status(401).json({"message" : "Unauthorised"})
   }else{
@@ -192,8 +192,9 @@ app.get('/admin/courses', (req, res) => {
 app.post('/users/signup', (req, res) => {
   
   // logic to sign up user
-  var username = req.body.username;
-  var password = req.body.password;
+  // var username = req.body.username;
+  // var password = req.body.password;
+  const { username , password} = req.body;
   var newUserObject = {
     username: username,
     password:password
