@@ -7,7 +7,14 @@ app.use(express.json());
 
 let ADMINS = [];
 let USERS = [];
-let COURSES = [];
+let COURSES = [{
+  "title": " new course by MrSujiit",
+  "description": "random",
+  "price": 29965659,
+  "imageLink": "HELLO",
+  "published": true,
+  "courseId": 495
+}];
 const secretForAdmin = "secret123";
 const secretForUser = "user456";
 
@@ -27,7 +34,23 @@ const generateJwtAdmin = (data)=> {
   const token = jwt.sign(data,secretForAdmin,{expiresIn:'1h'});
   return token;
 }
-
+const authenticateUser= (req,res,next)=> {
+  var authHeader = req.headers.authorization;
+  authHeader = authHeader.split(' ')[1];
+  const apa = jwt.verify(authHeader , secretForUser);
+  if(apa){
+    req.username = apa.username;
+    next();
+  }else{
+    res.send({message:"User Authentication Failed"})
+  }
+  
+};
+const generateJwtUser = (data)=> {
+  
+  const token = jwt.sign(data,secretForUser,{expiresIn:'1h'});
+  return token;
+}
 // Admin routes
 app.post('/admin/signup' ,  (req, res) => {
   // logic to sign up admin
@@ -86,26 +109,70 @@ app.get('/admin/courses', authenticateAdmin , (req, res) => {
  res.status(200).send({"courses": COURSES});
 });
 
-// // User routes
-// app.post('/users/signup', (req, res) => {
-//   // logic to sign up user
-// });
+// User routes
+app.post('/users/signup', (req, res) => {
+  // logic to sign up user
+  const user = req.body;
+  const existingUser= USERS.find(a => a.username === user.username );
+  if(existingUser){
+    res.status(403).json({message:"Username Already Exists"})
+  }else{
+    const token = generateJwtAdmin(user);
+    user.purchasedCourses=[];
+    USERS.push(user);
+    res.status(200).json({message : "User created successfully" , token:"Bearer "+token});
+  }
+});
 
-// app.post('/users/login', (req, res) => {
-//   // logic to log in user
-// });
+app.post('/users/login', (req, res) => {
+  // logic to log in user
+  const user = req.headers;
+  const existingUser = USERS.find(a=> a.username === user.username && a.password === user.password)
+  if(existingUser){
+    const token = generateJwtUser(user);
+    res.json({message: "Logged in successfully", token:"Bearer "+token})
+  }else{
+    res.json({
+      message:"User Authentication Failed"
+    })
+  }
+});
 
-// app.get('/users/courses', (req, res) => {
-//   // logic to list all courses
-// });
+app.get('/users/courses', authenticateUser , (req, res) => {
+  // logic to list all courses
+  res.json({courses:COURSES});
+});
 
-// app.post('/users/courses/:courseId', (req, res) => {
-//   // logic to purchase a course
-// });
+app.post('/users/courses/:courseId', authenticateUser , (req, res) => {
+  // logic to purchase a course
+  const courseId = Number(req.params.courseId);
+  const username = req.username;
+  var index = COURSES.findIndex(a=> a.courseId == courseId);
+    if(index == -1){
+      res.status(403).send({message:"Course not found"})
+    }else{
+      //pushing purchased course into users object
+      var userIndex = USERS.findIndex(a => a.username = username);
+      USERS[userIndex].purchasedCourses.push(COURSES[index]);
+      res.status(200).send(
+        {
+        message:"Course Purchased successfully",
+        course:COURSES[index],
+        "all courses of  user" : USERS[userIndex].purchasedCourses
+        });
+    }
+});
 
-// app.get('/users/purchasedCourses', (req, res) => {
-//   // logic to view purchased courses
-// });
+app.get('/users/purchasedCourses',authenticateUser, (req, res) => {
+  // logic to view purchased courses
+  const username = req.username;
+  var userIndex = USERS.findIndex(a => a.username = username);
+  res.send({
+    "courses" : USERS[userIndex].purchasedCourses
+  })
+
+
+});
 
 app.listen(3000, () => {
   console.log('Server is listening on port 3000');
