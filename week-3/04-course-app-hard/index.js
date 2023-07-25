@@ -30,7 +30,7 @@ const courseSchema = new mongoose.Schema({
 //define mongoose models
 const User = mongoose.model('User',userSchema);
 const Admin = mongoose.model('Admin',adminSchema);
-const course = mongoose.model('Course',courseSchema);
+const Course = mongoose.model('Course',courseSchema);
 
 const authenticateAdmin= (req,res,next)=> {
   var authHeader = req.headers.authorization;
@@ -86,49 +86,43 @@ app.post('/admin/signup' ,  async(req, res) => {
   }
 });
 
-// app.post('/admin/login', (req, res) => {
-//   // logic to log in admin
-//   const admin = req.headers;
-//   const existingAdmin = ADMINS.find(a=> a.username === admin.username && a.password === admin.password)
-//   if(existingAdmin){
-//     const token = generateJwtAdmin(admin);
-//     res.json({message: "Logged in successfully", token:"Bearer "+token})
-//   }else{
-//     res.json({
-//       message:"Authentication Failed"
-//     })
-//   }
-// });
+app.post('/admin/login', async(req, res) => {
+  // logic to log in admin
+  const {username , password} = req.headers;
+  const admin = await Admin.findOne({username , password})
+  if(admin){
+    const token = generateJwtAdmin(req.headers);
+    res.json({message: "Logged in successfully", token:"Bearer "+token})
+  }else{
+    res.json({
+      message:"Authentication Failed"
+    })
+  }
+});
 
-// app.post('/admin/courses',authenticateAdmin , (req, res) => {
-//   // logic to create a course
-//   var courseId = Math.floor(Math.random()*1000);
-//   const course = req.body;
-//   course.courseId = courseId;
-//   COURSES.push(course)
-//   var outputObj = {"message":"Course created successfully" , "courseId"  :courseId};
-//   res.status(200).send(outputObj)
-// });
+app.post('/admin/courses',authenticateAdmin , async(req, res) => {
+  // logic to create a course
+  const newCourse = new Course(req.body)
+  await newCourse.save();
+  res.status(200).send({message:"Course created successfully" , "courseId"  :newCourse.id})
+});
 
-// app.put('/admin/courses/:courseId', authenticateAdmin , (req, res) => {
-//   // logic to edit a course
-//   var courseId = Number(req.params.courseId);
-//   var index= COURSES.findIndex(a=> a.courseId == courseId)
-//   if(index == -1){
-//     res.json({message: "Course Id not found."});
-//   }else{
-//     var course = req.body;
-//     console.log(course);
-//     course.courseId = courseId;
-//     COURSES.splice(index,1,course);
-//     res.status(200).send({"message" : "course updated Successfully" ,"courses":COURSES[index]} );
-//   }
-// });
+app.put('/admin/courses/:courseId', authenticateAdmin , async(req, res) => {
+  // logic to edit a course
+  var course = await Course.findByIdAndUpdate(req.params.courseId , req.body , {new:true})
+  if(course){
+    res.status(200).json({"message" : "course updated Successfully"} );
+  }else{
+    res.status(404).json({message: "Course Id not found."});
+  }
+});
 
-// app.get('/admin/courses', authenticateAdmin , (req, res) => {
-//   // logic to get all course
-//  res.status(200).send({"courses": COURSES});
-// });
+app.get('/admin/courses', authenticateAdmin , async(req, res) => {
+  // logic to get all course
+  const courses = await Course.findOne({});
+ res.status(200).send({courses});
+
+});
 
 // // User routes
 // app.post('/users/signup', (req, res) => {
