@@ -168,7 +168,6 @@ app.get('/users/courses', authenticateUser , async (req, res) => {
 
 app.post('/users/courses/:courseId', authenticateUser, async (req, res) => {
   const course = await Course.findById(req.params.courseId);
-  console.log(course);
   if (course) {
     const user = await User.findOne({ username: req.username });
     if (user) {
@@ -188,7 +187,12 @@ app.get('/users/purchasedCourses',authenticateUser, async(req, res) => {
   const username = req.username;
   const user = await User.findOne({username}).populate('purchasedCourses');
   if(user){
-    res.send({purchasedCourses: user.purchasedCourses || [] })
+    var array = user.purchasedCourses;
+    const uniqueArray = array.filter((item, index, self) =>
+  index === self.findIndex(obj => obj._id === item._id)
+);
+
+    res.send({purchasedCourses: uniqueArray || [] })
   }else{
     res.status(403).json({ message: 'User not found' });
   }
